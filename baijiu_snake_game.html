@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>白酒知识贪吃蛇</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode.js@1.0.0/qrcode.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#8B0000',
+                        secondary: '#DAA520',
+                        accent: '#F0E68C',
+                        dark: '#2D2926',
+                        light: '#F8F5F2'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            }
+            .bg-game-pattern {
+                background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%238B0000' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            }
+            .snake-head {
+                fill: #8B0000;
+            }
+            .snake-body {
+                fill: #A52A2A;
+            }
+            .fruit {
+                fill: #DAA520;
+            }
+            .game-border {
+                stroke: #8B0000;
+                stroke-width: 2;
+            }
+        }
+    </style>
+</head>
+<body class="bg-dark text-light min-h-screen bg-game-pattern">
+    <!-- 顶部导航 -->
+    <header class="bg-primary/90 backdrop-blur-sm text-light shadow-lg fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-2xl md:text-3xl font-bold tracking-tight flex items-center">
+                <i class="fa-solid fa-wine-bottle mr-2 text-secondary"></i>
+                <span>白酒知识贪吃蛇</span>
+            </h1>
+            <div class="flex items-center space-x-4">
+                <button id="soundToggle" class="p-2 rounded-full hover:bg-white/10 transition-colors">
+                    <i class="fa-solid fa-volume-up text-secondary"></i>
+                </button>
+                <button id="shareBtn" class="p-2 rounded-full hover:bg-white/10 transition-colors">
+                    <i class="fa-solid fa-share-alt text-secondary"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 pt-24 pb-16 flex flex-col items-center">
+        <!-- 游戏开始界面 -->
+        <div id="startScreen" class="w-full max-w-md flex flex-col items-center justify-center text-center p-6 bg-dark/80 backdrop-blur-md rounded-2xl shadow-2xl border border-secondary/30">
+            <div class="mb-6 relative w-32 h-32">
+                <div class="absolute inset-0 bg-primary/20 rounded-full animate-pulse"></div>
+                <i class="fa-solid fa-gamepad text-6xl text-secondary absolute inset-0 flex items-center justify-center"></i>
+            </div>
+            <h2 class="text-[clamp(1.8rem,5vw,2.5rem)] font-bold mb-4 text-secondary text-shadow">白酒知识贪吃蛇</h2>
+            <p class="text-light/80 mb-6 text-lg">结合传统贪吃蛇与白酒文化知识的趣味游戏</p>
+            <div class="grid grid-cols-1 gap-4 mb-8 w-full">
+                <div class="bg-dark/60 p-4 rounded-lg border border-secondary/20">
+                    <h3 class="font-bold text-secondary mb-2 flex items-center">
+                        <i class="fa-solid fa-info-circle mr-2"></i>游戏规则
+                    </h3>
+                    <ul class="text-left space-y-2 text-light/80">
+                        <li class="flex items-start">
+                            <i class="fa-solid fa-check-circle text-secondary mt-1 mr-2"></i>
+                            <span>使用方向键或WASD控制蛇的移动</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa-solid fa-check-circle text-secondary mt-1 mr-2"></i>
+                            <span>吃到食物后会出现白酒知识问题</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa-solid fa-check-circle text-secondary mt-1 mr-2"></i>
+                            <span>回答正确获得10分，错误减少1条命</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa-solid fa-check-circle text-secondary mt-1 mr-2"></i>
+                            <span>撞到墙壁或自己的身体减少1条命</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <button id="startBtn" class="bg-secondary hover:bg-secondary/90 text-dark font-bold py-3 px-8 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center">
+                <i class="fa-solid fa-play mr-2"></i>开始游戏
+            </button>
+        </div>
+
+        <!-- 游戏界面 (默认隐藏) -->
+        <div id="gameScreen" class="w-full max-w-3xl hidden">
+            <!-- 游戏信息栏 -->
+            <div class="flex justify-between items-center mb-4 bg-dark/80 backdrop-blur-md p-4 rounded-xl border border-secondary/30">
+                <div class="flex items-center">
+                    <div class="text-secondary mr-4">
+                        <i class="fa-solid fa-trophy mr-1"></i>
+                        <span id="score" class="font-bold">0</span>
+                    </div>
+                    <div class="text-accent">
+                        <i class="fa-solid fa-heart mr-1"></i>
+                        <span id="lives" class="font-bold">3</span>
+                    </div>
+                </div>
+                <div>
+                    <button id="pauseBtn" class="bg-dark hover:bg-dark/70 text-light py-2 px-4 rounded-lg transition-colors">
+                        <i class="fa-solid fa-pause mr-1"></i>暂停
+                    </button>
+                </div>
+            </div>
+
+            <!-- 游戏画布容器 -->
+            <div class="relative bg-dark/80 backdrop-blur-md rounded-xl overflow-hidden border border-secondary/30 shadow-xl">
+                <svg id="gameCanvas" class="w-full aspect-[3/2] bg-dark/40" viewBox="0 0 600 400">
+                    <!-- 游戏边框 -->
+                    <rect x="10" y="10" width="580" height="380" class="game-border" fill="none" rx="5" ry="5"></rect>
+                    
+                    <!-- 蛇和食物将在这里动态生成 -->
+                </svg>
+
+                <!-- 移动设备控制按钮 -->
+                <div class="grid grid-cols-3 gap-2 p-4 md:hidden">
+                    <div></div>
+                    <button id="btnUp" class="bg-secondary/20 hover:bg-secondary/40 text-secondary p-4 rounded-lg transition-colors">
+                        <i class="fa-solid fa-chevron-up"></i>
+                    </button>
+                    <div></div>
+                    <button id="btnLeft" class="bg-secondary/20 hover:bg-secondary/40 text-secondary p-4 rounded-lg transition-colors">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <div></div>
+                    <button id="btnRight" class="bg-secondary/20 hover:bg-secondary/40 text-secondary p-4 rounded-lg transition-colors">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                    <div></div>
+                    <button id="btnDown" class="bg-secondary/20 hover:bg-secondary/40 text-secondary p-4 rounded-lg transition-colors">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div></div>
+                </div>
+            </div>
+
+            <!-- 问题卡片 (默认隐藏) -->
+            <div id="questionCard" class="mt-6 bg-dark/80 backdrop-blur-md p-6 rounded-xl border border-secondary/30 shadow-xl hidden">
+                <h3 class="text-xl font-bold text-secondary mb-4" id="questionText">问题将在这里显示</h3>
+                <div id="optionsContainer" class="space-y-3 mb-4">
+                    <!-- 选项将在这里动态生成 -->
+                </div>
+                <div id="feedbackContainer" class="mt-4 p-3 rounded-lg hidden"></div>
+            </div>
+        </div>
+
+        <!-- 游戏结束界面 (默认隐藏) -->
+        <div id="gameOverScreen" class="w-full max-w-md flex flex-col items-center justify-center text-center p-6 bg-dark/80 backdrop-blur-md rounded-2xl shadow-2xl border border-secondary/30 hidden">
+            <div class="mb-6 relative w-32 h-32">
+                <div class="absolute inset-0 bg-primary/20 rounded-full animate-pulse"></div>
+                <i class="fa-solid fa-medal text-6xl text-secondary absolute inset-0 flex items-center justify-center"></i>
+            </div>
+            <h2 class="text-[clamp(1.8rem,5vw,2.5rem)] font-bold mb-2 text-secondary text-shadow">游戏结束</h2>
+            <p class="text-light/80 mb-4">你的得分: <span id="finalScore" class="font-bold text-secondary">0</span></p>
+            <div class="mb-6 w-full">
+                <div class="bg-dark/60 p-4 rounded-lg border border-secondary/20 mb-4">
+                    <h3 class="font-bold text-secondary mb-2">游戏评价</h3>
+                    <p id="gameResult" class="text-light/80">评价将在这里显示</p>
+                </div>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3 w-full">
+                <button id="restartBtn" class="bg-secondary hover:bg-secondary/90 text-dark font-bold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex-1">
+                    <i class="fa-solid fa-redo mr-2"></i>再玩一次
+                </button>
+                <button id="shareResultBtn" class="bg-primary hover:bg-primary/90 text-light font-bold py-3 px-6 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex-1">
+                    <i class="fa-solid fa-share-alt mr-2"></i>分享成绩
+                </button>
+            </div>
+        </div>
+
+        <!-- 二维码分享模态框 (默认隐藏) -->
+        <div id="qrcodeModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+            <div class="bg-dark rounded-2xl p-6 max-w-md w-full border border-secondary/30 shadow-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-secondary">扫描二维码分享</h3>
+                    <button id="closeQrcodeModal" class="text-light/60 hover:text-light">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div id="qrcodeContainer" class="bg-white p-4 rounded-xl mb-4"></div>
+                    <p class="text-light/80 mb-4">扫描二维码与朋友分享游戏</p>
+                    <button id="downloadQrcodeBtn" class="bg-secondary hover:bg-secondary/90 text-dark font-bold py-2 px-6 rounded-full transition-colors">
+                        <i class="fa-solid fa-download mr-2"></i>下载二维码
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-primary/90 backdrop-blur-sm text-light py-4">
+        <div class="container mx-auto px-4 text-center">
+            <p>© 2025 白酒知识贪吃蛇 | 学习白酒文化的趣味方式</p>
+        </div>
+    </footer>
+
+    <script>
+        // 游戏配置
+        const GAME_CONFIG = {
+            gridSize: 20,
+            initialSpeed: 150,
+            speedIncrease: 5,
+            initialLives: 3,
+            questionTimeLimit: 15 // 回答问题的时间限制(秒)
+        };
+
+        // 游戏状态
+        const gameState = {
+            snake: [{x: 10, y: 10}],
+            direction: {x: 1, y: 0},
+            nextDirection: {x: 1, y: 0},
+            fruit: {x: 5, y: 5},
+            score: 0,
+            lives: GAME_CONFIG.initialLives,
+            isGameOver: false,
+            isPaused: false,
+            isQuestionActive: false,
+            speed: GAME_CONFIG.initialSpeed,
+            gameInterval: null,
+            questions: [
+                {
+                    question: "中国白酒的四大香型不包括以下哪种?",
+                    options: ["酱香型", "清香型", "浓香型", "果香型"],
+                    answer: 3
+                },
+                {
+                    question: "以下哪种白酒属于酱香型?",
+                    options: ["茅台", "五粮液", "汾酒", "洋河大曲"],
+                    answer: 0
+                },
+                {
+                    question: "白酒的主要成分是什么?",
+                    options: ["甲醇和水", "乙醇和水", "丙醇和水", "丁醇和水"],
+                    answer: 1
+                },
+                {
+                    question: "以下哪个不是著名白酒品牌?",
+                    options: ["泸州老窖", "古井贡酒", "红星二锅头", "拉菲"],
+                    answer: 3
+                },
+                {
+                    question: "白酒发酵过程中主要依靠什么微生物?",
+                    options: ["酵母菌", "乳酸菌", "醋酸菌", "青霉菌"],
+                    answer: 0
+                },
+                {
+                    question: "以下哪种是清香型白酒的代表?",
+                    options: ["茅台", "五粮液", "汾酒", "剑南春"],
+                    answer: 2
+                },
+                {
+                    question: "白酒的酒精度数通常是指什么?",
+                    options: ["质量百分比", "体积百分比", "密度比", "重量比"],
+                    answer: 1
+                },
+                {
+                    question: "中国白酒历史悠久，请问以下哪个时期白酒酿造技术已较为成熟?",
+                    options: ["商周时期", "唐宋时期", "明清时期", "民国时期"],
+                    answer: 1
+                },
+                {
+                    question: "以下哪种原料不是白酒酿造的主要原料?",
+                    options: ["高粱", "小麦", "玉米", "葡萄"],
+                    answer: 3
+                },
+                {
+                    question: "白酒储存的最佳条件是什么?",
+                    options: ["阳光直射", "高温潮湿", "阴凉干燥", "冰箱冷藏"],
+                    answer: 2
+                }
+            ],
+            currentQuestion: null,
+            questionStartTime: 0,
+            questionTimer: null
+        };
+
+        // DOM元素
+        const elements = {
+            startScreen: document.getElementById('startScreen'),
+            gameScreen: document.getElementById('gameScreen'),
+            gameOverScreen: document.getElementById('gameOverScreen'),
+            gameCanvas: document.getElementById('gameCanvas'),
+            scoreDisplay: document.getElementById('score'),
+            livesDisplay: document.getElementById('lives'),
+            finalScoreDisplay: document.getElementById('finalScore'),
+            gameResultDisplay: document.getElementById('gameResult'),
+            startBtn: document.getElementById('startBtn'),
+            pauseBtn: document.getElementById('pauseBtn'),
+            restartBtn: document.getElementById('restartBtn'),
+            shareBtn: document.getElementById('shareBtn'),
+            shareResultBtn: document.getElementById('shareResultBtn'),
+            soundToggle: document.getElementById('soundToggle'),
+            questionCard: document.getElementById('questionCard'),
+            questionText: document.getElementById('questionText'),
+            optionsContainer: document.getElementById('optionsContainer'),
+            feedbackContainer: document.getElementById('feedbackContainer'),
+            qrcodeModal: document.getElementById('qrcodeModal'),
+            closeQrcodeModal: document.getElementById('closeQrcodeModal'),
+            qrcodeContainer: document.getElementById('qrcodeContainer'),
+            downloadQrcodeBtn: document.getElementById('downloadQrcodeBtn'),
+            btnUp: document.getElementById('btnUp'),
+            btnDown: document.getElementById('btnDown'),
+            btnLeft: document.getElementById('btnLeft'),
+            btnRight: document.getElementById('btnRight')
+        };
+
+        // 声音控制
+        let soundEnabled = true;
+        elements.soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            elements.soundToggle.innerHTML = soundEnabled ? 
+                '<i class="fa-solid fa-volume-up text-secondary"></i>' : 
+                '<i class="fa-solid fa-volume-off text-secondary"></i>';
+        });
+
+        // 播放音效
+        function playSound(type) {
+            if (!soundEnabled) return;
+            
+            // 简单的音效模拟
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+            
+            switch (type) {
+                case 'eat':
+                    oscillator.frequency.setValueAtTime(880, context.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(440, context.currentTime + 0.2);
+                    gain.gain.setValueAtTime(1, context.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.2);
+                    oscillator.start();
+                    oscillator.stop(context.currentTime + 0.2);
+                    break;
+                case 'hit':
+                    oscillator.frequency.setValueAtTime(220, context.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(110, context.currentTime + 0.3);
+                    gain.gain.setValueAtTime(1, context.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.3);
+                    oscillator.start();
+                    oscillator.stop(context.currentTime + 0.3);
+                    break;
+                case 'correct':
+                    oscillator.frequency.setValueAtTime(1320, context.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(880, context.currentTime + 0.2);
+                    gain.gain.setValueAtTime(1, context.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.2);
+                    oscillator.start();
+                    oscillator.stop(context.currentTime + 0.2);
+                    break;
+                case 'wrong':
+                    oscillator.frequency.setValueAtTime(330, context.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(220, context.currentTime + 0.3);
+                    gain.gain.setValueAtTime(1, context.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.3);
+                    oscillator.start();
+                    oscillator.stop(context.currentTime + 0.3);
+                    break;
+            }
+        }
+
+        // 初始化游戏
+        function initGame() {
+            gameState.snake = [{x: 10, y: 10}];
+            gameState.direction = {x: 1, y: 0};
+            gameState.nextDirection = {x: 1, y: 0};
+            gameState.score = 0;
+            gameState.lives = GAME_CONFIG.initialLives;
+            gameState.isGameOver = false;
+            gameState.isPaused = false;
+            gameState.isQuestionActive = false;
+            gameState.speed = GAME_CONFIG.initialSpeed;
+            
+            if (gameState.gameInterval) clearInterval(gameState.gameInterval);
+            if (gameState.questionTimer) clearInterval(gameState.questionTimer);
+            
+            elements.scoreDisplay.textContent = gameState.score;
+            elements.livesDisplay.textContent = gameState.lives;
+            
+            generateFruit();
+            renderGame();
+            
+            // 开始游戏循环
+            gameState.gameInterval = setInterval(gameLoop, gameState.speed);
+        }
+
+        // 生成随机水果位置
+        function generateFruit() {
+            const canvasWidth = 600;
+            const canvasHeight = 400;
+            
+            // 确保水果不会出现在蛇身上
+            let validPosition = false;
+            while (!validPosition) {
+                gameState.fruit = {
+                    x: Math.floor(Math.random() * (canvasWidth / GAME_CONFIG.gridSize - 2)) + 1,
+                    y: Math.floor(Math.random() * (canvasHeight / GAME_CONFIG.gridSize - 2)) + 1
+                };
+                
+                validPosition = true;
+                for (let segment of gameState.snake) {
+                    if (segment.x === gameState.fruit.x && segment.y === gameState.fruit.y) {
+                        validPosition = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 渲染游戏
+        function renderGame() {
+            // 清空画布
+            elements.gameCanvas.innerHTML = `
+                <rect x="10" y="10" width="580" height="380" class="game-border" fill="none" rx="5" ry="5"></rect>
+            `;
+            
+            // 绘制蛇
+            gameState.snake.forEach((segment, index) => {
+                const x = segment.x * GAME_CONFIG.gridSize;
+                const y = segment.y * GAME_CONFIG.gridSize;
+                
+                const snakePart = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                snakePart.setAttribute("x", x);
+                snakePart.setAttribute("y", y);
+                snakePart.setAttribute("width", GAME_CONFIG.gridSize - 1);
+                snakePart.setAttribute("height", GAME_CONFIG.gridSize - 1);
+                snakePart.setAttribute("rx", 2);
+                snakePart.setAttribute("ry", 2);
+                
+                // 蛇头和身体使用不同颜色
+                if (index === 0) {
+                    snakePart.setAttribute("class", "snake-head");
+                } else {
+                    snakePart.setAttribute("class", "snake-body");
+                }
+                
+                elements.gameCanvas.appendChild(snakePart);
+            });
+            
+            // 绘制水果
+            const fruitX = gameState.fruit.x * GAME_CONFIG.gridSize;
+            const fruitY = gameState.fruit.y * GAME_CONFIG.gridSize;
+            
+            const fruit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            fruit.setAttribute("cx", fruitX + GAME_CONFIG.gridSize / 2);
+            fruit.setAttribute("cy", fruitY + GAME_CONFIG.gridSize / 2);
+            fruit.setAttribute("r", GAME_CONFIG.gridSize / 2 - 1);
+            fruit.setAttribute("class", "fruit");
+            fruit.setAttribute("animation", "pulse 1s infinite");
+            
+            elements.gameCanvas.appendChild(fruit);
+            
+            // 添加水果动画
+            const animate = document.createElementNS("http://www.w3.org/2000/svg", "animate");
+            animate.setAttribute("attributeName", "r");
+            animate.setAttribute("values", `${GAME_CONFIG.gridSize / 2 - 1};${GAME_CONFIG.gridSize / 2 + 2};${GAME_CONFIG.gridSize / 2 - 1}`);
+            animate.setAttribute("dur", "1s");
+            animate.setAttribute("repeatCount", "indefinite");
+            fruit.appendChild(animate);
+            animate.beginElement();
+        }
+
+        // 游戏循环
+        function gameLoop() {
+            if (gameState.isPaused || gameState.isQuestionActive || gameState.isGameOver) return;
+            
+            // 更新方向
+            gameState.direction = gameState.nextDirection;
+            
+            // 移动蛇
+            const head = {x: gameState.snake[0].x + gameState.direction.x, y: gameState.snake[0].y + gameState.direction.y};
+            
+            // 检测边界碰撞
+            if (head.x < 0 || head.x >= 600 / GAME_CONFIG.gridSize || head.y < 0 || head.y >= 400 / GAME_CONFIG.gridSize) {
+                handleCollision();
+                return;
+            }
+            
+            // 检测自我碰撞
+            for (let i = 0; i < gameState.snake.length; i++) {
+                if (gameState.snake[i].x === head.x && gameState.snake[i].y === head.y) {
+                    handleCollision();
+                    return;
+                }
+            }
+            
+            // 添加新头部
+            gameState.snake.unshift(head);
+            
+            // 检测是否吃到水果
+            if (head.x === gameState.fruit.x && head.y === gameState.fruit.y) {
+                // 增加分数
+                gameState.score += 5;
+                elements.scoreDisplay.textContent = gameState.score;
+                
+                // 播放吃食物音效
+                playSound('eat');
+                
+                // 显示问题
+                showRandomQuestion();
+                
+                // 加快游戏速度
+                gameState.speed = Math.max(GAME_CONFIG.initialSpeed - (gameState.score / 10) * GAME_CONFIG.speedIncrease, 50);
+                clearInterval(gameState.gameInterval);
+                gameState.gameInterval = setInterval(gameLoop, gameState.speed);
+            } else {
+                // 如果没吃到水果，移除尾部
+                gameState.snake.pop();
+            }
+            
+            // 渲染游戏
+            renderGame();
+        }
+
+        // 处理碰撞
+        function handleCollision() {
+            // 播放碰撞音效
+            playSound('hit');
+            
+            // 减少生命值
+            gameState.lives--;
+            elements.livesDisplay.textContent = gameState.lives;
+            
+            if (gameState.lives <= 0) {
+                endGame();
+            } else {
+                // 重置蛇的位置
+                gameState.snake = [{x: 10, y: 10}];
+                gameState.direction = {x: 1, y: 0};
+                gameState.nextDirection = {x: 1, y: 0};
+                
+                // 暂停游戏一小段时间
+                gameState.isPaused = true;
+                setTimeout(() => {
+                    gameState.isPaused = false;
+                }, 1000);
+            }
+        }
+
+        // 显示随机问题
+        function showRandomQuestion() {
+            gameState.isQuestionActive = true;
+            
+            // 随机选择一个问题
+            const randomIndex = Math.floor(Math.random() * gameState.questions.length);
+            gameState.currentQuestion = gameState.questions[randomIndex];
+            
+            // 更新问题UI
+            elements.questionText.textContent = gameState.currentQuestion.question;
+            elements.optionsContainer.innerHTML = '';
+            
+            // 生成选项按钮
+            gameState.currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'w-full text-left p-3 rounded-lg border border-secondary/30 bg-dark/60 hover:bg-dark/40 transition-colors';
+                button.innerHTML = `
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-secondary/20 text-secondary mr-2">
+                        ${index + 1}
+                    </span>
+                    ${option}
+                `;
+                
+                button.addEventListener('click', () => checkAnswer(index));
+                elements.optionsContainer.appendChild(button);
+            });
+            
+            // 显示问题卡片
+            elements.questionCard.classList.remove('hidden');
+            
+            // 开始计时
+            gameState.questionStartTime = Date.now();
+            gameState.questionTimer = setInterval(updateQuestionTimer, 1000);
+        }
+
+        // 更新问题计时器
+        function updateQuestionTimer() {
+            const elapsedTime = Math.floor((Date.now() - gameState.questionStartTime) / 1000);
+            const remainingTime = GAME_CONFIG.questionTimeLimit - elapsedTime;
+            
+            if (remainingTime <= 0) {
+                clearInterval(gameState.questionTimer);
+                checkAnswer(-1); // -1表示超时未回答
+            }
+        }
+
+        // 检查答案
+        function checkAnswer(selectedIndex) {
+            clearInterval(gameState.questionTimer);
+            
+            // 禁用所有选项按钮
+            const optionButtons = elements.optionsContainer.querySelectorAll('button');
+            optionButtons.forEach(button => {
+                button.disabled = true;
+                button.classList.remove('hover:bg-dark/40');
+            });
+            
+            // 显示反馈
+            elements.feedbackContainer.classList.remove('hidden');
+            
+            let isCorrect = selectedIndex === gameState.currentQuestion.answer;
+            
+            if (selectedIndex === -1) {
+                // 超时未回答
+                elements.feedbackContainer.className = 'mt-4 p-3 rounded-lg bg-red-900/30 border border-red-700 text-red-300';
+                elements.feedbackContainer.innerHTML = `
+                    <i class="fa-solid fa-clock-o mr-2"></i>
+                    时间到！正确答案是: ${gameState.currentQuestion.answer + 1}. ${gameState.currentQuestion.options[gameState.currentQuestion.answer]}
+                `;
+                isCorrect = false;
+            } else if (isCorrect) {
+                // 回答正确
+                elements.feedbackContainer.className = 'mt-4 p-3 rounded-lg bg-green-900/30 border border-green-700 text-green-300';
+                elements.feedbackContainer.innerHTML = `
+                    <i class="fa-solid fa-check-circle mr-2"></i>
+                    恭喜，回答正确！+10分
+                `;
+                
+                // 增加分数
+                gameState.score += 10;
+                elements.scoreDisplay.textContent = gameState.score;
+                
+                // 播放正确音效
+                playSound('correct');
+            } else {
+                // 回答错误
+                elements.feedbackContainer.className = 'mt-4 p-3 rounded-lg bg-red-900/30 border border-red-700 text-red-300';
+                elements.feedbackContainer.innerHTML = `
+                    <i class="fa-solid fa-times-circle mr-2"></i>
+                    回答错误！正确答案是: ${gameState.currentQuestion.answer + 1}. ${gameState.currentQuestion.options[gameState.currentQuestion.answer]}
+                `;
+                
+                // 减少生命值
+                gameState.lives--;
+                elements.livesDisplay.textContent = gameState.lives;
+                
+                // 播放错误音效
+                playSound('wrong');
+                
+                // 检查游戏是否结束
+                if (gameState.lives <= 0) {
+                    setTimeout(endGame, 2000);
+                    return;
+                }
+            }
+            
+            // 2秒后隐藏问题卡片并继续游戏
+            setTimeout(() => {
+                elements.questionCard.classList.add('hidden');
+                elements.feedbackContainer.classList.add('hidden');
+                gameState.isQuestionActive = false;
+                
+                // 生成新水果
+                generateFruit();
+            }, 2000);
+        }
+
+        // 结束游戏
+        function endGame() {
+            gameState.isGameOver = true;
+            clearInterval(gameState.gameInterval);
+            
+            // 更新最终分数
+            elements.finalScoreDisplay.textContent = gameState.score;
+            
+            // 根据分数显示评价
+            let resultText = '';
+            if (gameState.score >= 80) {
+                resultText = '太棒了！你对白酒知识非常了解，堪称白酒专家！';
+            } else if (gameState.score >= 50) {
+                resultText = '不错！你对白酒有相当的了解，继续加油！';
+            } else if (gameState.score >= 30) {
+                resultText = '还可以！你已经掌握了一些白酒基础知识。';
+            } else {
+                resultText = '继续努力！白酒知识的世界等着你去探索！';
+            }
+            elements.gameResultDisplay.textContent = resultText;
+            
+            // 显示游戏结束屏幕
+            elements.gameScreen.classList.add('hidden');
+            elements.gameOverScreen.classList.remove('hidden');
+        }
+
+        // 生成二维码
+        function generateQRCode() {
+            // 使用当前URL生成二维码
+            const currentUrl = window.location.href;
+            
+            // 清空现有二维码
+            elements.qrcodeContainer.innerHTML = '';
+            
+            // 生成新二维码
+            new QRCode(elements.qrcodeContainer, {
+                text: currentUrl,
+                width: 200,
+                height: 200,
+                colorDark: "#8B0000",
+                colorLight: "#F8F5F2",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        // 下载二维码图片
+        function downloadQRCode() {
+            const canvas = elements.qrcodeContainer.querySelector('canvas');
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = '白酒知识贪吃蛇.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+        }
+
+        // 事件监听
+        elements.startBtn.addEventListener('click', () => {
+            elements.startScreen.classList.add('hidden');
+            elements.gameScreen.classList.remove('hidden');
+            initGame();
+        });
+
+        elements.pauseBtn.addEventListener('click', () => {
+            gameState.isPaused = !gameState.isPaused;
+            elements.pauseBtn.innerHTML = gameState.isPaused ? 
+                '<i class="fa-solid fa-play mr-1"></i>继续' : 
+                '<i class="fa-solid fa-pause mr-1"></i>暂停';
+        });
+
+        elements.restartBtn.addEventListener('click', () => {
+            elements.gameOverScreen.classList.add('hidden');
+            elements.gameScreen.classList.remove('hidden');
+            initGame();
+        });
+
+        elements.shareBtn.addEventListener('click', () => {
+            generateQRCode();
+            elements.qrcodeModal.classList.remove('hidden');
+        });
+
+        elements.shareResultBtn.addEventListener('click', () => {
+            generateQRCode();
+            elements.qrcodeModal.classList.remove('hidden');
+        });
+
+        elements.closeQrcodeModal.addEventListener('click', () => {
+            elements.qrcodeModal.classList.add('hidden');
+        });
+
+        elements.downloadQrcodeBtn.addEventListener('click', downloadQRCode);
+
+        // 键盘控制
+        document.addEventListener('keydown', (e) => {
+            if (gameState.isQuestionActive) return;
+            
+            switch (e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    if (gameState.direction.y !== 1) {
+                        gameState.nextDirection = {x: 0, y: -1};
+                    }
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    if (gameState.direction.y !== -1) {
+                        gameState.nextDirection = {x: 0, y: 1};
+                    }
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    if (gameState.direction.x !== 1) {
+                        gameState.nextDirection = {x: -1, y: 0};
+                    }
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    if (gameState.direction.x !== -1) {
+                        gameState.nextDirection = {x: 1, y: 0};
+                    }
+                    break;
+                case ' ':
+                    // 空格键暂停/继续
+                    gameState.isPaused = !gameState.isPaused;
+                    elements.pauseBtn.innerHTML = gameState.isPaused ? 
+                        '<i class="fa-solid fa-play mr-1"></i>继续' : 
+                        '<i class="fa-solid fa-pause mr-1"></i>暂停';
+                    break;
+            }
+        });
+
+        // 移动设备控制按钮
+        elements.btnUp.addEventListener('click', () => {
+            if (gameState.isQuestionActive) return;
+            if (gameState.direction.y !== 1) {
+                gameState.nextDirection = {x: 0, y: -1};
+            }
+        });
+
+        elements.btnDown.addEventListener('click', () => {
+            if (gameState.isQuestionActive) return;
+            if (gameState.direction.y !== -1) {
+                gameState.nextDirection = {x: 0, y: 1};
+            }
+        });
+
+        elements.btnLeft.addEventListener('click', () => {
+            if (gameState.isQuestionActive) return;
+            if (gameState.direction.x !== 1) {
+                gameState.nextDirection = {x: -1, y: 0};
+            }
+        });
+
+        elements.btnRight.addEventListener('click', () => {
+            if (gameState.isQuestionActive) return;
+            if (gameState.direction.x !== -1) {
+                gameState.nextDirection = {x: 1, y: 0};
+            }
+        });
+
+        // 初始化二维码生成（用于分享）
+        generateQRCode();
+    </script>
+</body>
+</html>    
